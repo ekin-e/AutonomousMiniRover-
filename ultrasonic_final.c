@@ -154,7 +154,9 @@ void ultrasonic_init(void)
 // Read distance from the ultrasonic sensor
 void read_distance(ultrasonic_sensor *sensor)
 {   
+    // USART2_PRINTF("Entered read_distance method.\r\n");
     const uint16_t timeout_us = 36000; 
+
     // Send a 10us pulse to the Trig pin
     PORTA.OUTCLR = sensor->TRIG_PIN;
     _delay_us(2);
@@ -162,50 +164,51 @@ void read_distance(ultrasonic_sensor *sensor)
     _delay_us(10);
     PORTA.OUTCLR = sensor->TRIG_PIN;
 
-    // want to timeout if echo never goes high 
+    // Timeout if echo never goes high
     start_timer(); 
-    // Wait for Echo pin to go high (start timing)
     while (!(PORTA.IN & sensor->ECHO_PIN)) {
         if (timer_count >= timeout_us) {
             stop_timer();
-            sensor->distance = -1; // error in sensing 
+            USART2_PRINTF("Echo pin did not go high - timeout occurred.\r\n");
+            sensor->distance = -1; // Error in sensing 
             return;
         }
     }
     
     start_timer();
-
-    // Wait for Echo pin to go low (stop timing)
-    while (PORTA.IN & sensor->ECHO_PIN) // this will always happen 
-        ;
+    while (PORTA.IN & sensor->ECHO_PIN); // Wait for Echo pin to go low
     stop_timer();
 
     // Calculate distance in cm
     float distance = ((float)pulse_width * 0.34) / 2.0;
+    distance = clamp(distance, 0.0f, 30.0f); 
 
-    // for now we only care about distances up to 30cms in front of rover
-    distance = clamp (distance, 0.0f, 30.0f); 
-    
-    // updates sensor with distance reading
+    // Update sensor with distance reading
     sensor->distance = distance;
 }
 
+
 float calculate_turn(float d1, float d2)
 {
+    // USART2_PRINTF("Calculating angle");
     // takes in 2 distances from sensors and computes degrees to turn
     float L = 3.0f; // l is distance between sensors
     // atanf returns in radians cringe jk  
     float radians = atanf((d1 - d2) / L); 
     float degrees = radians * (180.0f / M_PI);
-    return degrees;
+    return clamp(degrees, -45.0f, 45.0f);
     
 }
 
 float calculate_forward_distance(float d1, float d2, float angle)
 {
+    // USART2_PRINTF("Calculating forward dist.\r\n");
     float angle_radians = angle * (M_PI / 180.0f); // Convert to radians
-    float result = ((d1 + d2) / 2.0f) * cosf(angle_radians);
-    return result;
+    // scale via cos
+    float distance = ((d1 + d2) / 2.0f) * cosf(angle_radians); 
+    // if the angle to turn is close to 0 we shouldn't more to much 
+    distance -= 5.0f;
+    return clamp(distance, 0.0f, 100.0f); // for now robot shouldnt need to travel more than 100 cms  
 }
 
 // utils 
