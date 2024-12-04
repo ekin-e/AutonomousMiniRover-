@@ -55,6 +55,7 @@ float calculate_forward_distance(float d1, float d2, float angle); // returns th
 
 // utils 
 float clamp(float value, float min, float max);
+void my_delay_us(uint16_t delay_us);
 
 int main(void)
 {
@@ -113,7 +114,7 @@ void TCA0_init(void)
     TCA0.SINGLE.INTCTRL = TCA_SINGLE_OVF_bm;                              // Enable overflow interrupt
     TCA0.SINGLE.CTRLB = TCA_SINGLE_WGMODE_NORMAL_gc;                      // Normal mode
     TCA0.SINGLE.EVCTRL &= ~(TCA_SINGLE_CNTEI_bm);                         // Disable event counting
-    TCA0.SINGLE.PER = (F_CPU / 1000000) - 1;                              // Set period for 1µs (F_CPU in Hz)
+    TCA0.SINGLE.PER = (F_CPU / 1000000) - 1;                              // Set period for 1Âµs (F_CPU in Hz)
     TCA0.SINGLE.CTRLA = TCA_SINGLE_CLKSEL_DIV1_gc | TCA_SINGLE_ENABLE_bm; // Start timer with no prescaler
 }
 // Start the timer
@@ -159,9 +160,9 @@ void read_distance(ultrasonic_sensor *sensor)
 
     // Send a 10us pulse to the Trig pin
     PORTA.OUTCLR = sensor->TRIG_PIN;
-    _delay_us(2);
+    my_delay_us(2); 
     PORTA.OUTSET = sensor->TRIG_PIN;
-    _delay_us(10);
+    my_delay_us(10);
     PORTA.OUTCLR = sensor->TRIG_PIN;
 
     // Timeout if echo never goes high
