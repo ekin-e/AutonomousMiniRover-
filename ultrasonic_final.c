@@ -46,6 +46,7 @@ volatile uint8_t measure_active = 0;
 
 // Timer functions
 void TCA0_init(void);
+void TCB0_init(void);
 void start_timer(void);
 void stop_timer(void);
 
@@ -61,7 +62,8 @@ int main(void)
 {
     USART2_INIT();     // Initialize USART2
     ultrasonic_init(); // Initialize GPIO for ultrasonic sensor
-    TCA0_init();       // Initialize TimerB for pulse width measurement
+    TCA0_init();       // Initialize TimerA for pulse width measurement
+    TCB0_init();
 
     char buffer[100]; // Buffer for storing distance output
 
@@ -114,8 +116,16 @@ void TCA0_init(void)
     TCA0.SINGLE.INTCTRL = TCA_SINGLE_OVF_bm;                              // Enable overflow interrupt
     TCA0.SINGLE.CTRLB = TCA_SINGLE_WGMODE_NORMAL_gc;                      // Normal mode
     TCA0.SINGLE.EVCTRL &= ~(TCA_SINGLE_CNTEI_bm);                         // Disable event counting
-    TCA0.SINGLE.PER = (F_CPU / 1000000) - 1;                              // Set period for 1Âµs (F_CPU in Hz)
+    TCA0.SINGLE.PER = (F_CPU / 1000000) - 1;                              // Set period for 1ms (F_CPU in Hz)
     TCA0.SINGLE.CTRLA = TCA_SINGLE_CLKSEL_DIV1_gc | TCA_SINGLE_ENABLE_bm; // Start timer with no prescaler
+}
+
+void TCB0_init(void)
+{
+    // TCB0.CCMP = 65535; // Period ~1ms
+    TCB0.CCMP =  (F_CPU / 1000000) - 1; 
+    TCB0.INTCTRL = TCB_CAPT_bm;    // Enable overflow interrupt
+    TCB0.CTRLA = TCB_CLKSEL_CLKDIV1_gc | TCB_ENABLE_bm; // Start timer
 }
 // Start the timer
 void start_timer(void)
@@ -133,11 +143,21 @@ void stop_timer(void)
 // Interrupt Service Routine for TimerA overflow
 ISR(TCA0_OVF_vect)
 {
+    // FIXME retired for timer B 
     if (measure_active)
     {
         timer_count++;
     }
     TCA0.SINGLE.INTFLAGS = TCA_SINGLE_OVF_bm; // Clear interrupt flag
+}
+
+ISR(TCB0_INT_vect)
+{
+    if (measure_active)
+    {
+        timer_count++;
+    }
+    TCB0.INTFLAGS = TCB_CAPT_bm; // Clear the interrupt flag
 }
 
 // Initialize GPIO for ultrasonic sensors
