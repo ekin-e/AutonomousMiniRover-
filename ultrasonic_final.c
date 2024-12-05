@@ -62,7 +62,7 @@ int main(void)
 {
     USART2_INIT();     // Initialize USART2
     ultrasonic_init(); // Initialize GPIO for ultrasonic sensor
-    TCA0_init();       // Initialize TimerA for pulse width measurement
+    // TCA0_init();       // Initialize TimerA for pulse width measurement
     TCB0_init();
 
     char buffer[100]; // Buffer for storing distance output
@@ -197,7 +197,14 @@ void read_distance(ultrasonic_sensor *sensor)
     }
     
     start_timer();
-    while (PORTA.IN & sensor->ECHO_PIN); // Wait for Echo pin to go low
+    while (PORTA.IN & sensor->ECHO_PIN) {
+        if (timer_count >= timeout_us) {
+            stop_timer();
+            USART2_PRINTF("Echo pin did not go high - timeout occurred.\r\n");
+            sensor->distance = -1; // Error in sensing 
+            return;
+        }
+    } // Wait for Echo pin to go low
     stop_timer();
 
     // Calculate distance in cm
