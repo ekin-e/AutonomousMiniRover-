@@ -34,7 +34,7 @@ void ultrasonic_init(void)
 }
 
 // utils 
-float clamp(float value, float min, float max)
+int16_t clamp(int16_t value, int16_t min, int16_t max)
 {
     if (value < min)
         return min;
@@ -59,7 +59,7 @@ void my_delay_us(uint16_t delay_us) {
 void read_distance(ultrasonic_sensor *sensor)
 {   
     const uint16_t timeout_us = 4096 * 3; 
-    float distance = 0;
+    int32_t distance = -1;
     //vTaskSuspendAll(); //-------------------------
     
     // Send a 10us pulse to the Trig pin
@@ -95,33 +95,15 @@ void read_distance(ultrasonic_sensor *sensor)
     // Calculate distance in cm
     // 10 = x * 0.34 / 2 then x = 20/0.34
     // 10cm = 59us = 177 pulse
-    distance = ((float)pulse_width * 0.34) / 2.0;
-    distance = clamp(distance, 0.0f, 20.0f) ; 
-    if (distance > 15) distance = 0;
-    if (distance > 1 && distance < 5) distance = 5 - distance;
-  
+    distance = pulse_width;
+    distance *= 17;
+    distance /= 1000;
+    
+    distance = clamp(distance, 0, 30) ; 
+    if (distance == 30) distance = 15;
+    
  exit:
     // Update sensor with distance reading
     sensor->distance = distance;
-    my_delay_us(100);
-}
-
-
-int16_t calculate_turn(float d1, float d2)
-{
-    // takes in 2 distances from sensors and computes degrees to turn
-    float L = 3.0f; // l is distance between sensors
-    float radians = atanf((d1 - d2) / L);
-    float degrees = radians * (180.0f / M_PI);
-    return (int16_t) clamp(degrees, -45.0, 45.0);
-}
-
-int16_t calculate_forward_distance(float d1, float d2, int16_t angle)
-{
-    float angle_radians = angle * (M_PI / 180.0f); // Convert to radians
-    // scale via cos
-    float distance = ((d1 + d2) / 2.0f) * cosf(angle_radians);
-    // if the angle to turn is close to 0 we shouldn't move too much
-    distance -= 5.0f;
-    return (int16_t) clamp(distance, 0.0f, 10.0f); // for now robot shouldnt need to travel more than 10 cm/sec
+    //my_delay_us(100);
 }

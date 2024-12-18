@@ -5,7 +5,7 @@
 #include "ultrasonic_final.h"
 
 #define MULTIPLIER 100 //to help integer calculation
-#define CYCLE 10 //2x10ms
+#define CYCLE 5 //2x10ms
 
 #define MAX_SPEED (20 * MULTIPLIER) // cm/sec
 #define MIN_SPEED (-20 * MULTIPLIER)
@@ -29,8 +29,8 @@ volatile uint8_t counter_10ms = 0;
 volatile int32_t current_speed = 0;
 volatile int32_t current_angle = 0;
 
-volatile float sensor_dist1 = 0;
-volatile float sensor_dist2 = 0;
+volatile int16_t sensor_dist1 = 0;
+volatile int16_t sensor_dist2 = 0;
     
 void TCA0_init(void)
 {
@@ -168,6 +168,8 @@ void set_motor_speed(int16_t target_speed, int16_t target_angle)
     }
 }
 
+int16_t distance;
+
 int main(void)
 {
     TCA0_init();
@@ -183,19 +185,44 @@ int main(void)
         if (sensor_readings_ready) {
             // Measure distances for both sensors
             read_distance(&global_state.sensor1);
+            if (global_state.sensor1.distance == -1) {
+                global_state.sensor1.distance = sensor_dist1;
+                global_state.sensor2.distance = sensor_dist2;
+            }
             read_distance(&global_state.sensor2);
-
-            sensor_dist1 = global_state.sensor1.distance;
-            if (sensor_dist1 == -1) continue;
+            if (global_state.sensor2.distance == -1) {
+                global_state.sensor1.distance = sensor_dist1;
+                global_state.sensor2.distance = sensor_dist2;
+            }
+            //integral
+            sensor_dist1 += (global_state.sensor1.distance - sensor_dist1)/4;           
+            sensor_dist2 += (global_state.sensor2.distance - sensor_dist2)/4;
             
-            sensor_dist2 = global_state.sensor2.distance;
-            if (sensor_dist2 == -1) continue;
+#define TESTx
             
-//            sensor_total_angle = 0;
-//            sensor_speed = 5 * MULTIPLIER;
-            sensor_total_angle = calculate_turn(sensor_dist1, sensor_dist2);
+#ifdef TEST
             sensor_total_angle = 0;
-            sensor_speed = calculate_forward_distance(sensor_dist1, sensor_dist2, sensor_total_angle) * MULTIPLIER;
+            sensor_speed = -5 * MULTIPLIER;
+#else       
+            distance = ((sensor_dist1 + sensor_dist2) / 2);
+            //0..10    15   20..30
+            //forward: distance after 25cm go forward with speed 5..15
+            if (distance >= 20) sensor_speed = (5 + distance - 20) * MULTIPLIER;
+            else
+            //backward: distance before 6cm go backward with speed -5..-15
+            if (distance >= 0 && distance <= 10) sensor_speed = (-5 + distance - 10) * MULTIPLIER;
+            else
+                sensor_speed = 0;
+
+            int16_t diff = sensor_dist1 - sensor_dist2;
+            
+            //Turn: 
+            if ((diff < -4) || (diff > 4))
+                sensor_total_angle = diff*8;
+            else
+                sensor_total_angle = 0;
+            
+#endif            
             sensor_readings_ready = 0;
         }
     }

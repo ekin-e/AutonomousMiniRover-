@@ -6,7 +6,7 @@ typedef struct
 {
     uint8_t TRIG_PIN;
     uint8_t ECHO_PIN;
-    volatile float distance;
+    volatile int16_t distance;
 } ultrasonic_sensor;
 
 // Global structure to manage both sensors
@@ -18,9 +18,6 @@ typedef struct
 
 extern GLOBAL_VARS global_state;
 
-// calculations for degrees and distance
-int16_t calculate_turn(float d1, float d2);                             // returns degrees to turn wheels
-int16_t calculate_forward_distance(float d1, float d2, int16_t angle); // returns the distance forward the car needs to go
 void read_distance(ultrasonic_sensor *sensor);
 
 void TCB0_init(void);
