@@ -23,6 +23,9 @@ a consistent distance from a detected object.
 ![direct](https://github.com/user-attachments/assets/cd96a21e-feba-4c31-aa66-79c3983d41f4)
 ![bottom](https://github.com/user-attachments/assets/83f2970e-7945-4338-83dc-b0efa8989cc1)
 
+# Video Demo
+[![VR Locomotion](https://img.youtube.com/vi/IGJo0kwgB50/0.jpg)](https://www.youtube.com/watch?v=IGJo0kwgB50)
+
 # Contributions
 - Design of hardware and electrical components
 - Reading and filtering sensor information
