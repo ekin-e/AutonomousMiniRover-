@@ -22,3 +22,9 @@ a consistent distance from a detected object.
 ![front](https://github.com/user-attachments/assets/045767e5-7deb-4d22-83c5-0836dd6142f9)
 ![direct](https://github.com/user-attachments/assets/cd96a21e-feba-4c31-aa66-79c3983d41f4)
 ![bottom](https://github.com/user-attachments/assets/83f2970e-7945-4338-83dc-b0efa8989cc1)
+
+# Contributions
+- Design of hardware and electrical components
+- Reading and filtering sensor information
+- All motor driver and control components
+- Wrote the Design and Implementation, Final Product sections in the final report
